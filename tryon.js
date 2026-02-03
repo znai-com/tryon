@@ -1,94 +1,72 @@
 (function(){
 
 /* ================= CONFIG ================= */
-const MODE = document.currentScript.dataset.mode || "demo";
+const PRODUCT_IMAGE = "https://cdn.shopify.com/s/files/1/0777/6115/1208/files/demo_image_2.png";
 
 /* ================= CSS ================= */
 const style = document.createElement("style");
 style.innerHTML = `
-body.tryon-open header,
-body.tryon-open main {
-  filter: blur(6px) brightness(0.5);
+body.tryon-open { overflow: hidden; }
+body.tryon-open header, body.tryon-open main { filter: blur(8px) brightness(0.7); transition:0.3s ease; }
+
+.tryon-overlay {
+  position:fixed; inset:0; background:rgba(0,0,0,0.7);
+  display:none; justify-content:center; align-items:center; z-index:999999;
+  backdrop-filter: blur(10px); transition: all 0.3s ease;
 }
 
-.tryon-overlay{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.55);
-  display:none;
-  justify-content:center;
-  align-items:center;
-  z-index:9999;
+.tryon-box {
+  background:#fff; width:95%; max-width:480px; border-radius:24px;
+  padding:25px; position:relative; text-align:center;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  box-shadow:0 10px 40px rgba(0,0,0,0.3);
 }
 
-.tryon-box{
-  background:#fff;
-  width:90%;
-  max-width:900px;
-  border-radius:16px;
-  padding:20px;
-  animation:scaleIn .35s ease;
+.tryon-box.full { max-width:850px; }
+
+.compare {
+  position:relative; width:100%; aspect-ratio:4/5; 
+  overflow:hidden; border-radius:18px; background:#f9f9f9;
 }
 
-.tryon-box.full{
-  max-width:100%;
-  height:90vh;
+.compare img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+
+.range-ctrl {
+  position:absolute; inset:0; width:100%; height:100%;
+  opacity:0; cursor:ew-resize; z-index:20; touch-action:none;
 }
 
-@keyframes scaleIn{
-  from{transform:scale(.9);opacity:0}
-  to{transform:scale(1);opacity:1}
+.slider-line {
+  position:absolute; top:0; bottom:0; left:50%; width:2px;
+  background:#fff; z-index:10; pointer-events:none;
 }
 
-.tryon-btn{
-  padding:12px 20px;
-  background:#000;
-  color:#fff;
-  border-radius:30px;
-  cursor:pointer;
+.slider-line::after {
+  content:'↔'; position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%); background:#000; color:#fff;
+  width:35px; height:35px; border-radius:50%; display:flex; align-items:center; justify-content:center;
 }
 
-.compare{
-  position:relative;
-  height:420px;
-  overflow:hidden;
-  border-radius:14px;
+.tryon-btn {
+  padding:12px 25px; background:#000; color:#fff;
+  border-radius:50px; border:none; cursor:pointer; font-weight:700; margin-top:15px;
+  transition: all 0.2s ease;
 }
+.tryon-btn:hover { background:#333; }
+.tryon-btn:active { transform:scale(0.97); }
 
-.compare img{
-  position:absolute;
-  top:0; left:0;
-  width:100%;
-  height:100%;
-  object-fit:contain;
+.loader {
+  width:40px; height:40px; border:3px solid #f3f3f3;
+  border-top:3px solid #000; border-radius:50%;
+  animation:spin 1s linear infinite; margin:20px auto;
 }
+@keyframes spin { to { transform:rotate(360deg); } }
 
-.compare .after{
-  clip-path: inset(0 0 0 50%);
-}
+.close { position:absolute; top:15px; right:20px; cursor:pointer; font-size:24px; z-index:100; }
 
-.range-ctrl{
-  position:absolute;
-  top:0; bottom:0;
-  left:50%;
-  width:4px;
-  background:#fff;
-  cursor:ew-resize;
-  touch-action:pan-x;
-}
-
-.badge{
-  text-align:center;
-  font-size:20px;
-  margin:10px 0;
-  font-weight:600;
-}
-
-.close{
-  position:absolute;
-  top:15px; right:20px;
-  cursor:pointer;
-  font-size:22px;
+@media(max-width:480px){
+  .tryon-box.full { max-width:95%; padding:20px; }
+  .slider-line::after { width:30px; height:30px; font-size:14px; }
 }
 `;
 document.head.appendChild(style);
@@ -96,91 +74,125 @@ document.head.appendChild(style);
 /* ================= HTML ================= */
 const overlay = document.createElement("div");
 overlay.className="tryon-overlay";
+overlay.id="tryonOverlay";
 overlay.innerHTML=`
 <div class="tryon-box" id="popup">
   <div class="close" onclick="closeTryon()">✕</div>
-
-  <!-- STEP 1 -->
+  
   <div id="step1">
-    <h2>Upload your photo</h2>
-    <input type="file" id="userImg">
-    <br><br>
-    <button class="tryon-btn" onclick="startTryOn()">Try On</button>
+    <h2 style="margin-bottom:20px;">Virtual Try-On</h2>
+    <div style="padding:40px; border:2px dashed #ccc; border-radius:20px; cursor:pointer" onclick="document.getElementById('userImg').click()">
+       <b>Click to Upload Photo</b>
+    </div>
+    <input type="file" id="userImg" hidden accept="image/*">
   </div>
 
-  <!-- STEP 3 -->
+  <div id="step2" style="display:none">
+    <div class="loader"></div>
+    <p>AI is processing your request...</p>
+  </div>
+
   <div id="step3" style="display:none">
-    <div class="badge">✨ Perfect Fit</div>
+    <div style="background:#000; color:#fff; display:inline-block; padding:5px 15px; border-radius:20px; margin-bottom:10px; font-size:12px;">✨ PERFECT FIT</div>
     <div class="compare" id="compareBox">
-      <img id="beforeImg">
-      <img id="afterImg" class="after">
-      <div class="range-ctrl" id="slider"></div>
+      <img id="beforeImg" alt="User uploaded photo">
+      <div id="mask" style="position:absolute; inset:0; width:50%; overflow:hidden; border-right:2px solid #fff; z-index:5;">
+         <img id="afterImg" style="width:100%; height:100%; object-fit:cover;" alt="AI processed try-on">
+      </div>
+      <div class="slider-line" id="line"></div>
+      <input type="range" class="range-ctrl" id="slider" min="0" max="100" value="50">
     </div>
-    <br>
-    <button class="tryon-btn" onclick="resetTryOn()" style="background:#f4f4f4;color:#000">
-      Try Another
-    </button>
+    <button class="tryon-btn" onclick="resetTryOn()" style="background:#eee; color:#000; margin-right:10px;">Try Another</button>
+    <button class="tryon-btn" onclick="downloadImage()">Download</button>
   </div>
 </div>
 `;
 document.body.appendChild(overlay);
 
-/* ================= BUTTON ADD ================= */
-document.querySelectorAll("form[action*='/cart/add']").forEach(f=>{
-  const b=document.createElement("button");
-  b.type="button";
-  b.className="tryon-btn";
-  b.innerText="Try it On";
-  b.onclick=openTryon;
-  f.appendChild(b);
-});
+/* ================= CUSTOM AI LOGIC (PLACEHOLDER) ================= */
+async function processImageAI(userBase64) {
+  // Replace with your AI API
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(PRODUCT_IMAGE), 3000);
+  });
+}
 
 /* ================= FUNCTIONS ================= */
-window.openTryon=function(){
+window.openTryon = () => {
   document.body.classList.add("tryon-open");
-  overlay.style.display="flex";
+  overlay.style.display = "flex";
 };
 
-window.closeTryon=function(){
+window.closeTryon = () => {
   document.body.classList.remove("tryon-open");
-  overlay.style.display="none";
+  overlay.style.display = "none";
+  resetTryOn();
 };
 
-window.startTryOn=function(){
-  popup.classList.add("full");
-  step1.style.display="none";
-  step3.style.display="block";
+document.getElementById("userImg").onchange = async function(e) {
+  if(!e.target.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = async (event) => {
+    const base64 = event.target.result;
+    document.getElementById("beforeImg").src = base64;
+    
+    document.getElementById("step1").style.display = "none";
+    document.getElementById("step2").style.display = "block";
 
-  // DEMO images
-  beforeImg.src="https://via.placeholder.com/800x800?text=Before";
-  afterImg.src="https://via.placeholder.com/800x800?text=After";
+    try {
+      const aiRes = await processImageAI(base64);
+      if(!aiRes) throw new Error("AI processing failed");
+
+      document.getElementById("afterImg").src = aiRes;
+      document.getElementById("step2").style.display = "none";
+      document.getElementById("step3").style.display = "block";
+      document.getElementById("popup").classList.add("full");
+    } catch(err) {
+      alert("AI processing failed. Please try again.");
+      resetTryOn();
+    }
+  };
+  reader.readAsDataURL(e.target.files[0]);
 };
 
-window.resetTryOn=function(){
-  popup.classList.remove("full");
-  step3.style.display="none";
-  step1.style.display="block";
-  userImg.value="";
+window.resetTryOn = () => {
+  document.getElementById("popup").classList.remove("full");
+  document.getElementById("step3").style.display = "none";
+  document.getElementById("step2").style.display = "none";
+  document.getElementById("step1").style.display = "block";
+  document.getElementById("userImg").value = "";
+  document.getElementById("slider").value = 50;
+  document.getElementById("mask").style.width = "50%";
+  document.getElementById("line").style.left = "50%";
+};
+
+window.downloadImage = () => {
+  const img = document.getElementById("afterImg");
+  const link = document.createElement("a");
+  link.href = img.src;
+  link.download = "virtual-tryon-result.png";
+  link.click();
 };
 
 /* ================= SLIDER ================= */
-const slider=document.getElementById("slider");
-const afterImg=document.getElementById("afterImg");
-
-slider.onmousedown=e=>{
-  document.onmousemove=ev=>{
-    const rect=slider.parentElement.getBoundingClientRect();
-    let x=ev.clientX-rect.left;
-    let p=Math.max(0,Math.min(100,(x/rect.width)*100));
-    afterImg.style.clipPath=`inset(0 0 0 ${p}%)`;
-    slider.style.left=p+"%";
-  };
-  document.onmouseup=()=>document.onmousemove=null;
+document.getElementById("slider").oninput = function() {
+  const val = this.value;
+  document.getElementById("mask").style.width = val + "%";
+  document.getElementById("line").style.left = val + "%";
 };
 
-/* ESC close */
-document.addEventListener("keydown",e=>{
-  if(e.key==="Escape") closeTryon();
+/* Attach buttons to Shopify "Add to Cart" forms */
+document.querySelectorAll("form[action*='/cart/add']").forEach(f => {
+  if(!f.querySelector('.tryon-btn-added')){
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "tryon-btn tryon-btn-added";
+    b.innerText = "Try it On"; b.style.width = "100%";
+    b.onclick = openTryon;
+    f.appendChild(b);
+  }
 });
+
+/* ESC key to close */
+document.addEventListener("keydown", e => { if(e.key === "Escape") closeTryon(); });
 
 })();
