@@ -23,24 +23,20 @@ body.tryon-open { overflow:hidden; }
 }
 .compare {
   position:relative; width:100%; height:450px; 
-  background:#eee; overflow:hidden; border-radius:8px;
+  background:#000; overflow:hidden; border-radius:8px;
 }
-/* 🔥 FIXED ALIGNMENT: 'cover' ensures both images occupy same space exactly */
 .compare img {
   width:100% !important; height:100% !important; 
   object-fit: cover !important; 
   position:absolute; top:0; left:0;
-  display: block;
 }
 #mask {
   position:absolute; top:0; left:0; bottom:0; width:50%; overflow:hidden; 
   border-right:3px solid #fff; z-index:5;
 }
 #mask img { 
-  width: 500px !important; /* Matches container max-width approx */
-  height: 450px !important; 
+  width: 100% !important; height: 100% !important; 
   object-fit: cover !important;
-  max-width: none !important;
 }
 .range {
   position:absolute; inset:0; width:100%; height:100%;
@@ -84,7 +80,7 @@ overlay.innerHTML = `
     </div>
     <div style="margin-top:10px; display:flex; justify-content:center;">
         <button class="tryon-btn" onclick="resetTryOn()" style="background:#666">Try Another</button>
-        <button class="tryon-btn" id="downloadBtn">Download</button>
+        <button class="tryon-btn" id="downloadBtn">Download Result</button>
     </div>
   </div>
 </div>`;
@@ -118,7 +114,7 @@ document.getElementById("userImg").onchange = e => {
     if(out) {
       afterImg.src = out;
       afterImg.onload = () => {
-        // Alignment Sync: Make sure mask image matches afterImg size
+        // Alignment Sync
         const container = document.getElementById("compareContainer");
         mask.querySelector('img').style.width = container.offsetWidth + "px";
         mask.querySelector('img').style.height = container.offsetHeight + "px";
@@ -127,7 +123,7 @@ document.getElementById("userImg").onchange = e => {
         document.getElementById("step3").style.display="block";
       };
     } else {
-      alert("Something went wrong. Please try again.");
+      alert("AI Processing Failed. Please check your connection.");
       resetTryOn();
     }
   };
@@ -136,12 +132,14 @@ document.getElementById("userImg").onchange = e => {
 
 async function processImageAI(userImg){
   const prodImg = getProductImage();
-  let category = "tops"; 
-  const bodyContent = document.body.innerText.toLowerCase();
   
-  if(bodyContent.includes("tracksuit") || bodyContent.includes("suit") || bodyContent.includes("set")) {
+  // 🔥 SMART CATEGORY DETECTION (Even if no category in Shopify)
+  let category = "tops"; 
+  const pageContent = (document.title + " " + document.body.innerText).toLowerCase();
+  
+  if (pageContent.includes("tracksuit") || pageContent.includes("set") || pageContent.includes("suit")) {
     category = "one-pieces";
-  } else if(bodyContent.includes("pant") || bodyContent.includes("trouser")) {
+  } else if (pageContent.includes("pant") || pageContent.includes("trouser") || pageContent.includes("short")) {
     category = "bottoms";
   }
 
@@ -156,16 +154,27 @@ async function processImageAI(userImg){
   } catch(e) { return null; }
 }
 
+// 🔥 FIXED DOWNLOAD BUTTON
 document.getElementById("downloadBtn").onclick = async () => {
-  const a = document.createElement("a");
-  a.href = afterImg.src; a.download = "tryon_result.png";
-  a.click();
+  try {
+    const response = await fetch(afterImg.src);
+    const blob = await response.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = "tryon_result.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    console.error("Download failed:", error);
+    // Fallback in case of CORS issues
+    window.open(afterImg.src, '_blank');
+  }
 };
 
-slider.oninput = e => { 
-  mask.style.width = e.target.value + "%"; 
-};
-
+slider.oninput = e => { mask.style.width = e.target.value + "%"; };
 window.openTryon = () => { overlay.style.display="flex"; document.body.classList.add("tryon-open"); };
 
 const cartForm = document.querySelector("form[action*='/cart/add']");
