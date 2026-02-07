@@ -45,20 +45,29 @@ body.tryon-open { overflow:hidden; }
 .tryon-btn {
   margin:10px 8px; padding:12px 28px; background: var(--primary); color:#fff;
   border-radius:12px; border:none; cursor:pointer; font-weight:600;
-  transition: transform 0.2s, background 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  transition: transform 0.2s, background 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 .tryon-btn:hover { transform: translateY(-2px); background: #333; }
+
+/* 🔥 DOWNLOAD BUTTON CLICK GREEN */
+.tryon-btn.clicked-green { background: #27ae60 !important; transform: scale(0.95); }
+
 .loader-container { padding: 40px 0; }
 .loader {
   width:45px; height:45px; border:4px solid #f3f3f3; border-top:4px solid var(--accent);
   border-radius:50%; animation:spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite; margin:0 auto 20px;
 }
 @keyframes spin { to { transform:rotate(360deg); } }
+
+/* 🔥 CIRCLE WINDOWS-STYLE CLOSE BUTTON */
 .close { 
-  position:absolute; top:15px; right:20px; font-size:28px; color: #666; 
-  cursor:pointer; z-index:30; transition: color 0.2s;
+  position:absolute; top:15px; right:15px; width:32px; height:32px;
+  display:flex; align-items:center; justify-content:center;
+  border-radius:50%; font-size:18px; color: #666; 
+  cursor:pointer; z-index:30; transition: all 0.2s;
 }
-.close:hover { color: #000; }
+.close:hover { background: #e74c3c; color: #fff; }
+
 .step-title { font-size: 22px; font-weight: 700; margin-bottom: 15px; color: #1a1a1a; }
 `;
 document.head.appendChild(style);
@@ -104,13 +113,29 @@ document.body.appendChild(overlay);
 const beforeImg = document.getElementById("beforeImg"), afterImg = document.getElementById("afterImg");
 const mask = document.getElementById("mask"), slider = document.getElementById("slider");
 
-window.closeTryon = () => { overlay.style.display="none"; document.body.classList.remove("tryon-open"); resetTryOn(); };
+window.closeTryon = () => { 
+  overlay.style.display="none"; 
+  document.body.classList.remove("tryon-open"); 
+  resetTryOn(); 
+};
+
+// 🔥 CLOSE ON OUTSIDE CLICK
+overlay.onclick = (e) => {
+  if (e.target === overlay) closeTryon();
+};
+
+// 🔥 CLOSE ON ESC KEY
+document.addEventListener('keydown', (e) => {
+  if (e.key === "Escape" && overlay.style.display === "flex") closeTryon();
+});
 
 window.resetTryOn = () => {
   document.getElementById("step3").style.display="none";
   document.getElementById("step2").style.display="none";
   document.getElementById("step1").style.display="block";
   document.getElementById("userImg").value = "";
+  // Reset green button if needed
+  document.getElementById("downloadBtn").classList.remove("clicked-green");
   if(slider && mask) { slider.value = 50; mask.style.width = "50%"; }
 };
 
@@ -142,16 +167,12 @@ document.getElementById("userImg").onchange = e => {
 
 async function processImageAI(userImg){
   const prodImg = getProductImage();
-  
-  // 🔥 ADVANCED KEYWORD DETECTION
   let category = "tops"; 
   const content = (document.title + " " + document.body.innerText).toLowerCase();
-  
   const rules = {
     "one-pieces": ["tracksuit", "set", "suit", "jumpsuit", "coords", "outfit"],
     "bottoms": ["pant", "trouser", "short", "skirt", "jean", "legging"]
   };
-
   for (let cat in rules) {
     if (rules[cat].some(word => content.includes(word))) {
       category = cat;
@@ -170,7 +191,10 @@ async function processImageAI(userImg){
   } catch(e) { return null; }
 }
 
-document.getElementById("downloadBtn").onclick = async () => {
+document.getElementById("downloadBtn").onclick = async function() {
+  const btn = this;
+  btn.classList.add("clicked-green"); // 🔥 MAKE GREEN ON CLICK
+  
   try {
     const response = await fetch(afterImg.src);
     const blob = await response.blob();
@@ -178,13 +202,16 @@ document.getElementById("downloadBtn").onclick = async () => {
     const a = document.createElement("a");
     a.href = url; a.download = "my_style.png";
     a.click();
-  } catch(e) { window.open(afterImg.src, '_blank'); }
+    // Revert color after 1 second if you want, or keep it green
+    setTimeout(() => btn.classList.remove("clicked-green"), 1000);
+  } catch(e) { 
+    window.open(afterImg.src, '_blank'); 
+  }
 };
 
 slider.oninput = e => { mask.style.width = e.target.value + "%"; };
 window.openTryon = () => { overlay.style.display="flex"; document.body.classList.add("tryon-open"); };
 
-// Inject button into Shopify Product Page
 const target = document.querySelector("form[action*='/cart/add']") || document.querySelector(".product-form");
 if(target) {
   const b = document.createElement("button");
