@@ -22,17 +22,25 @@ body.tryon-open { overflow:hidden; }
   padding:20px; position:relative;
 }
 .compare {
-  position:relative; width:100%; height:400px; 
+  position:relative; width:100%; height:450px; 
   background:#eee; overflow:hidden; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
 }
+/* 🔥 FIXED ALIGNMENT: Force both images to same sizing */
 .compare img {
-  width:100%; height:100%; object-fit: contain; position:absolute;
+  width:100% !important; height:100% !important; 
+  object-fit: contain !important; 
+  position:absolute; top:0; left:0;
 }
 #mask {
   position:absolute; inset:0; width:50%; overflow:hidden; 
   border-right:3px solid #fff; z-index:5;
 }
-#mask img { width: 460px; height: 400px; object-fit: contain; }
+#mask img { 
+  width: 100% !important; height: 100% !important; 
+  object-fit: contain !important;
+  max-width: none !important;
+}
 .range {
   position:absolute; inset:0; width:100%; height:100%;
   opacity:0; cursor:ew-resize; z-index:20;
@@ -65,7 +73,7 @@ overlay.innerHTML = `
   </div>
   <div id="step2" style="display:none">
     <div class="loader"></div>
-    <p id="loaderText">AI processing... please wait</p>
+    <p id="loaderText">AI is tailoring your outfit... please wait</p>
   </div>
   <div id="step3" style="display:none">
     <div class="compare">
@@ -73,7 +81,7 @@ overlay.innerHTML = `
       <div id="mask"><img id="beforeImg"></div>
       <input type="range" class="range" id="slider" min="0" max="100" value="50">
     </div>
-    <div style="margin-top:10px">
+    <div style="margin-top:10px; display:flex; justify-content:center;">
         <button class="tryon-btn" onclick="resetTryOn()" style="background:#666">Try Another</button>
         <button class="tryon-btn" id="downloadBtn">Download</button>
     </div>
@@ -84,19 +92,13 @@ document.body.appendChild(overlay);
 const beforeImg = document.getElementById("beforeImg"), afterImg = document.getElementById("afterImg");
 const mask = document.getElementById("mask"), slider = document.getElementById("slider");
 
-document.addEventListener('keydown', (e) => { if(e.key === "Escape") closeTryon(); });
-overlay.onclick = (e) => { if(e.target.id === "tryonOverlay") closeTryon(); };
-
 window.closeTryon = () => { overlay.style.display="none"; document.body.classList.remove("tryon-open"); resetTryOn(); };
 
-// --- FIX 1: Slider Reset Logic ---
 window.resetTryOn = () => {
   document.getElementById("step3").style.display="none";
   document.getElementById("step2").style.display="none";
   document.getElementById("step1").style.display="block";
   document.getElementById("userImg").value = "";
-  
-  // Reset slider and mask to center
   if(slider && mask) {
     slider.value = 50;
     mask.style.width = "50%";
@@ -119,24 +121,21 @@ document.getElementById("userImg").onchange = e => {
         document.getElementById("step3").style.display="block";
       };
     } else {
-      alert("AI Processing Failed. Check Console (F12) for details.");
+      alert("Something went wrong. Please try again.");
       resetTryOn();
     }
   };
   reader.readAsDataURL(file);
 };
 
-// --- FIX 2: Dynamic Category Logic ---
 async function processImageAI(userImg){
   const prodImg = getProductImage();
-  
-  // Product type detection
   let category = "tops"; 
   const bodyContent = document.body.innerText.toLowerCase();
   
   if(bodyContent.includes("tracksuit") || bodyContent.includes("suit") || bodyContent.includes("set")) {
-    category = "one-pieces"; // Full body outfits
-  } else if(bodyContent.includes("pant") || bodyContent.includes("trouser") || bodyContent.includes("short")) {
+    category = "one-pieces";
+  } else if(bodyContent.includes("pant") || bodyContent.includes("trouser")) {
     category = "bottoms";
   }
 
@@ -144,33 +143,20 @@ async function processImageAI(userImg){
     const res = await fetch(BACKEND_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ 
-        userImage: userImg, 
-        productImage: prodImg,
-        category: category // Sending dynamic category to backend
-      })
+      body: JSON.stringify({ userImage: userImg, productImage: prodImg, category: category })
     });
-    
-    if(!res.ok) return null;
-
     const data = await res.json();
-    return data.resultImage || data.output; 
-  } catch(e) { 
-    return null; 
-  }
+    return data.resultImage; 
+  } catch(e) { return null; }
 }
 
 document.getElementById("downloadBtn").onclick = async () => {
-  const res = await fetch(afterImg.src);
-  const blob = await res.blob();
-  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url; a.download = "result.png";
+  a.href = afterImg.src; a.download = "tryon_result.png";
   a.click();
 };
 
 slider.oninput = e => { mask.style.width = e.target.value + "%"; };
-
 window.openTryon = () => { overlay.style.display="flex"; document.body.classList.add("tryon-open"); };
 
 const cartForm = document.querySelector("form[action*='/cart/add']");
