@@ -24,21 +24,22 @@ body.tryon-open { overflow:hidden; }
 .compare {
   position:relative; width:100%; height:450px; 
   background:#eee; overflow:hidden; border-radius:8px;
-  display:flex; align-items:center; justify-content:center;
 }
-/* 🔥 FIXED ALIGNMENT: Force both images to same sizing */
+/* 🔥 FIXED ALIGNMENT: 'cover' ensures both images occupy same space exactly */
 .compare img {
   width:100% !important; height:100% !important; 
-  object-fit: contain !important; 
+  object-fit: cover !important; 
   position:absolute; top:0; left:0;
+  display: block;
 }
 #mask {
-  position:absolute; inset:0; width:50%; overflow:hidden; 
+  position:absolute; top:0; left:0; bottom:0; width:50%; overflow:hidden; 
   border-right:3px solid #fff; z-index:5;
 }
 #mask img { 
-  width: 100% !important; height: 100% !important; 
-  object-fit: contain !important;
+  width: 500px !important; /* Matches container max-width approx */
+  height: 450px !important; 
+  object-fit: cover !important;
   max-width: none !important;
 }
 .range {
@@ -76,7 +77,7 @@ overlay.innerHTML = `
     <p id="loaderText">AI is tailoring your outfit... please wait</p>
   </div>
   <div id="step3" style="display:none">
-    <div class="compare">
+    <div class="compare" id="compareContainer">
       <img id="afterImg" crossorigin="anonymous">
       <div id="mask"><img id="beforeImg"></div>
       <input type="range" class="range" id="slider" min="0" max="100" value="50">
@@ -117,6 +118,11 @@ document.getElementById("userImg").onchange = e => {
     if(out) {
       afterImg.src = out;
       afterImg.onload = () => {
+        // Alignment Sync: Make sure mask image matches afterImg size
+        const container = document.getElementById("compareContainer");
+        mask.querySelector('img').style.width = container.offsetWidth + "px";
+        mask.querySelector('img').style.height = container.offsetHeight + "px";
+        
         document.getElementById("step2").style.display="none";
         document.getElementById("step3").style.display="block";
       };
@@ -156,7 +162,10 @@ document.getElementById("downloadBtn").onclick = async () => {
   a.click();
 };
 
-slider.oninput = e => { mask.style.width = e.target.value + "%"; };
+slider.oninput = e => { 
+  mask.style.width = e.target.value + "%"; 
+};
+
 window.openTryon = () => { overlay.style.display="flex"; document.body.classList.add("tryon-open"); };
 
 const cartForm = document.querySelector("form[action*='/cart/add']");
