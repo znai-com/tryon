@@ -1,204 +1,184 @@
 (function(){
 
-/* ================= CONFIG ================= */
-
-// 🔗 BACKEND URL (sirf ye change karna hoga)
 const BACKEND_URL = "https://tryon-backend-production-4f18.up.railway.app/tryon";
 
-/* Auto-detect Shopify product image */
 function getProductImage() {
-  const img =
-    document.querySelector(".product__media img") ||
-    document.querySelector(".product__image img") ||
-    document.querySelector("img[src*='cdn.shopify.com']");
-
-  return img ? img.src : null;
+  let img = document.querySelector('meta[property="og:image"]') || 
+            document.querySelector('.product__main-photos img') ||
+            document.querySelector('.product-featured-img') ||
+            document.querySelector('img[src*="/products/"]');
+  return img ? (img.content || img.src.split('?')[0]) : null;
 }
 
-/* ================= CSS ================= */
 const style = document.createElement("style");
 style.innerHTML = `
-body.tryon-open { overflow: hidden; }
-body.tryon-open header, body.tryon-open main { filter: blur(8px) brightness(0.7); transition:0.3s ease; }
-
-.tryon-overlay {
-  position:fixed; inset:0; background:rgba(0,0,0,0.7);
-  display:none; justify-content:center; align-items:center; z-index:999999;
-  backdrop-filter: blur(10px);
+body.tryon-open { overflow:hidden; }
+.tryon-overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,.9);
+  display:none; align-items:center; justify-content:center; z-index:1000000;
 }
-
-.tryon-box {
-  background:#fff; width:95%; max-width:480px; border-radius:24px;
-  padding:25px; position:relative; text-align:center;
-  box-shadow:0 10px 40px rgba(0,0,0,0.3);
+.tryon-box{
+  background:#fff; width:90%; max-width:500px; border-radius:15px; 
+  padding:20px; position:relative;
 }
-
-.tryon-box.full { max-width:850px; }
-
 .compare {
-  position:relative; width:100%; aspect-ratio:4/5;
-  overflow:hidden; border-radius:18px; background:#f9f9f9;
+  position:relative; width:100%; height:400px; 
+  background:#eee; overflow:hidden; border-radius:8px;
 }
-
-.compare img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-
-.range-ctrl {
+.compare img {
+  width:100%; height:100%; object-fit: contain; position:absolute;
+}
+#mask {
+  position:absolute; inset:0; width:50%; overflow:hidden; 
+  border-right:3px solid #fff; z-index:5;
+}
+#mask img { width: 460px; height: 400px; object-fit: contain; }
+.range {
   position:absolute; inset:0; width:100%; height:100%;
   opacity:0; cursor:ew-resize; z-index:20;
 }
-
-.slider-line {
-  position:absolute; top:0; bottom:0; left:50%; width:2px;
-  background:#fff; z-index:10;
-}
-
-.slider-line::after {
-  content:'↔'; position:absolute; top:50%; left:50%;
-  transform:translate(-50%,-50%);
-  background:#000; color:#fff;
-  width:35px; height:35px; border-radius:50%;
-  display:flex; align-items:center; justify-content:center;
-}
-
 .tryon-btn {
-  padding:12px 25px; background:#000; color:#fff;
-  border-radius:50px; border:none; cursor:pointer;
-  font-weight:700; margin-top:15px;
+  margin:10px 5px; padding:10px 20px; background:#000; color:#fff;
+  border-radius:5px; border:none; cursor:pointer; font-weight:bold;
 }
-
 .loader {
-  width:40px; height:40px; border:3px solid #f3f3f3;
-  border-top:3px solid #000; border-radius:50%;
-  animation:spin 1s linear infinite; margin:20px auto;
+  width:30px; height:30px; border:3px solid #f3f3f3; border-top:3px solid #3498db;
+  border-radius:50%; animation:spin 1s linear infinite; margin:20px auto;
 }
-
 @keyframes spin { to { transform:rotate(360deg); } }
-
-.close { position:absolute; top:15px; right:20px; cursor:pointer; font-size:24px; }
+.close { position:absolute; top:10px; right:15px; font-size:24px; cursor:pointer; z-index:30; }
 `;
 document.head.appendChild(style);
 
-/* ================= HTML ================= */
 const overlay = document.createElement("div");
-overlay.className="tryon-overlay";
-overlay.innerHTML=`
+overlay.className = "tryon-overlay";
+overlay.id = "tryonOverlay";
+overlay.innerHTML = `
 <div class="tryon-box" id="popup">
   <div class="close" onclick="closeTryon()">✕</div>
-
   <div id="step1">
-    <h2>Virtual Try-On</h2>
-    <div style="padding:40px;border:2px dashed #ccc;border-radius:20px;cursor:pointer"
-      onclick="document.getElementById('userImg').click()">
-      <b>Click to Upload Photo</b>
+    <h3>Virtual Try-On</h3>
+    <div style="padding:40px; border:2px dashed #ccc; cursor:pointer" onclick="document.getElementById('userImg').click()">
+      Upload your photo
     </div>
-    <input type="file" id="userImg" hidden accept="image/*">
+    <input id="userImg" type="file" hidden accept="image/*">
   </div>
-
   <div id="step2" style="display:none">
     <div class="loader"></div>
-    <p>AI is processing...</p>
+    <p id="loaderText">AI processing... please wait</p>
   </div>
-
   <div id="step3" style="display:none">
     <div class="compare">
-      <img id="beforeImg">
-      <div id="mask" style="position:absolute;inset:0;width:50%;overflow:hidden">
-        <img id="afterImg">
-      </div>
-      <div class="slider-line" id="line"></div>
-      <input type="range" class="range-ctrl" id="slider" min="0" max="100" value="50">
+      <img id="afterImg" crossorigin="anonymous">
+      <div id="mask"><img id="beforeImg"></div>
+      <input type="range" class="range" id="slider" min="0" max="100" value="50">
     </div>
-
-    <button class="tryon-btn" onclick="resetTryOn()" style="background:#eee;color:#000">Try Another</button>
-    <button class="tryon-btn" onclick="downloadImage()">Download</button>
+    <div style="margin-top:10px">
+        <button class="tryon-btn" onclick="resetTryOn()" style="background:#666">Try Another</button>
+        <button class="tryon-btn" id="downloadBtn">Download</button>
+    </div>
   </div>
-</div>
-`;
+</div>`;
 document.body.appendChild(overlay);
 
-/* ================= AI CALL (REAL BACKEND) ================= */
-async function processImageAI(userBase64) {
-  const productImage = getProductImage();
-  if (!productImage) {
-    alert("Product image not found");
-    return null;
+const beforeImg = document.getElementById("beforeImg"), afterImg = document.getElementById("afterImg");
+const mask = document.getElementById("mask"), slider = document.getElementById("slider");
+
+document.addEventListener('keydown', (e) => { if(e.key === "Escape") closeTryon(); });
+overlay.onclick = (e) => { if(e.target.id === "tryonOverlay") closeTryon(); };
+
+window.closeTryon = () => { overlay.style.display="none"; document.body.classList.remove("tryon-open"); resetTryOn(); };
+
+// --- FIX 1: Slider Reset Logic ---
+window.resetTryOn = () => {
+  document.getElementById("step3").style.display="none";
+  document.getElementById("step2").style.display="none";
+  document.getElementById("step1").style.display="block";
+  document.getElementById("userImg").value = "";
+  
+  // Reset slider and mask to center
+  if(slider && mask) {
+    slider.value = 50;
+    mask.style.width = "50%";
   }
-
-  const res = await fetch(BACKEND_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      userImage: userBase64,
-      productImage
-    })
-  });
-
-  const data = await res.json();
-  return data.resultImage;
-}
-
-/* ================= LOGIC ================= */
-window.openTryon = () => {
-  document.body.classList.add("tryon-open");
-  overlay.style.display = "flex";
-};
-
-window.closeTryon = () => {
-  document.body.classList.remove("tryon-open");
-  overlay.style.display = "none";
-  resetTryOn();
 };
 
 document.getElementById("userImg").onchange = e => {
   const file = e.target.files[0];
-  if(!file) return;
-
   const reader = new FileReader();
   reader.onload = async ev => {
-    document.getElementById("beforeImg").src = ev.target.result;
+    beforeImg.src = ev.target.result;
     document.getElementById("step1").style.display="none";
     document.getElementById("step2").style.display="block";
 
-    const aiImg = await processImageAI(ev.target.result);
-    document.getElementById("afterImg").src = aiImg;
-
-    document.getElementById("step2").style.display="none";
-    document.getElementById("step3").style.display="block";
-    document.getElementById("popup").classList.add("full");
+    const out = await processImageAI(ev.target.result);
+    if(out) {
+      afterImg.src = out;
+      afterImg.onload = () => {
+        document.getElementById("step2").style.display="none";
+        document.getElementById("step3").style.display="block";
+      };
+    } else {
+      alert("AI Processing Failed. Check Console (F12) for details.");
+      resetTryOn();
+    }
   };
   reader.readAsDataURL(file);
 };
 
-window.resetTryOn = () => {
-  document.getElementById("popup").classList.remove("full");
-  document.getElementById("step3").style.display="none";
-  document.getElementById("step2").style.display="none";
-  document.getElementById("step1").style.display="block";
-};
+// --- FIX 2: Dynamic Category Logic ---
+async function processImageAI(userImg){
+  const prodImg = getProductImage();
+  
+  // Product type detection
+  let category = "tops"; 
+  const bodyContent = document.body.innerText.toLowerCase();
+  
+  if(bodyContent.includes("tracksuit") || bodyContent.includes("suit") || bodyContent.includes("set")) {
+    category = "one-pieces"; // Full body outfits
+  } else if(bodyContent.includes("pant") || bodyContent.includes("trouser") || bodyContent.includes("short")) {
+    category = "bottoms";
+  }
 
-window.downloadImage = () => {
+  try {
+    const res = await fetch(BACKEND_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        userImage: userImg, 
+        productImage: prodImg,
+        category: category // Sending dynamic category to backend
+      })
+    });
+    
+    if(!res.ok) return null;
+
+    const data = await res.json();
+    return data.resultImage || data.output; 
+  } catch(e) { 
+    return null; 
+  }
+}
+
+document.getElementById("downloadBtn").onclick = async () => {
+  const res = await fetch(afterImg.src);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = document.getElementById("afterImg").src;
-  a.download = "tryon.png";
+  a.href = url; a.download = "result.png";
   a.click();
 };
 
-document.getElementById("slider").oninput = e => {
-  const v = e.target.value;
-  document.getElementById("mask").style.width = v+"%";
-  document.getElementById("line").style.left = v+"%";
-};
+slider.oninput = e => { mask.style.width = e.target.value + "%"; };
 
-/* Add button to Shopify */
-document.querySelectorAll("form[action*='/cart/add']").forEach(f=>{
-  if(!f.querySelector(".tryon-btn-added")){
-    const b=document.createElement("button");
-    b.type="button";
-    b.innerText="Try it On";
-    b.className="tryon-btn tryon-btn-added";
-    b.onclick=openTryon;
-    f.appendChild(b);
-  }
-});
+window.openTryon = () => { overlay.style.display="flex"; document.body.classList.add("tryon-open"); };
 
+const cartForm = document.querySelector("form[action*='/cart/add']");
+if(cartForm) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "tryon-btn";
+  b.innerText = "Try it On"; b.style.width="100%";
+  b.onclick = openTryon;
+  cartForm.appendChild(b);
+}
 })();
