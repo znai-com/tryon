@@ -3,7 +3,7 @@
 /* ================= CONFIG ================= */
 
 // 🔗 BACKEND URL (sirf ye change karna hoga)
-const BACKEND_URL = "https://tryon-backend-production-4f18.up.railway.app/run";
+const BACKEND_URL = "https://tryon-backend-production-4f18.up.railway.app/tryon";
 
 /* Auto-detect Shopify product image */
 function getProductImage() {
