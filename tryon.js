@@ -12,18 +12,21 @@ function getProductImage() {
 
 const style = document.createElement("style");
 style.innerHTML = `
+:root { --primary: #000; --accent: #3498db; --glass: rgba(255, 255, 255, 0.95); }
 body.tryon-open { overflow:hidden; }
 .tryon-overlay{
-  position:fixed; inset:0; background:rgba(0,0,0,.9);
-  display:none; align-items:center; justify-content:center; z-index:1000000;
+  position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+  display:none; align-items:center; justify-content:center; z-index:1000000; transition: all 0.3s ease;
 }
 .tryon-box{
-  background:#fff; width:90%; max-width:500px; border-radius:15px; 
-  padding:20px; position:relative;
+  background: var(--glass); width:95%; max-width:550px; border-radius:24px; 
+  padding:30px; position:relative; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+  text-align: center; border: 1px solid rgba(255,255,255,0.3);
 }
 .compare {
-  position:relative; width:100%; height:450px; 
-  background:#000; overflow:hidden; border-radius:8px;
+  position:relative; width:100%; height:480px; 
+  background:#111; overflow:hidden; border-radius:16px;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
 }
 .compare img {
   width:100% !important; height:100% !important; 
@@ -32,26 +35,31 @@ body.tryon-open { overflow:hidden; }
 }
 #mask {
   position:absolute; top:0; left:0; bottom:0; width:50%; overflow:hidden; 
-  border-right:3px solid #fff; z-index:5;
+  border-right:4px solid #fff; z-index:5; box-shadow: 5px 0 15px rgba(0,0,0,0.3);
 }
-#mask img { 
-  width: 100% !important; height: 100% !important; 
-  object-fit: cover !important;
-}
+#mask img { width: 550px !important; height: 480px !important; object-fit: cover !important; }
 .range {
   position:absolute; inset:0; width:100%; height:100%;
   opacity:0; cursor:ew-resize; z-index:20;
 }
 .tryon-btn {
-  margin:10px 5px; padding:10px 20px; background:#000; color:#fff;
-  border-radius:5px; border:none; cursor:pointer; font-weight:bold;
+  margin:10px 8px; padding:12px 28px; background: var(--primary); color:#fff;
+  border-radius:12px; border:none; cursor:pointer; font-weight:600;
+  transition: transform 0.2s, background 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
+.tryon-btn:hover { transform: translateY(-2px); background: #333; }
+.loader-container { padding: 40px 0; }
 .loader {
-  width:30px; height:30px; border:3px solid #f3f3f3; border-top:3px solid #3498db;
-  border-radius:50%; animation:spin 1s linear infinite; margin:20px auto;
+  width:45px; height:45px; border:4px solid #f3f3f3; border-top:4px solid var(--accent);
+  border-radius:50%; animation:spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite; margin:0 auto 20px;
 }
 @keyframes spin { to { transform:rotate(360deg); } }
-.close { position:absolute; top:10px; right:15px; font-size:24px; cursor:pointer; z-index:30; }
+.close { 
+  position:absolute; top:15px; right:20px; font-size:28px; color: #666; 
+  cursor:pointer; z-index:30; transition: color 0.2s;
+}
+.close:hover { color: #000; }
+.step-title { font-size: 22px; font-weight: 700; margin-bottom: 15px; color: #1a1a1a; }
 `;
 document.head.appendChild(style);
 
@@ -62,25 +70,32 @@ overlay.innerHTML = `
 <div class="tryon-box" id="popup">
   <div class="close" onclick="closeTryon()">✕</div>
   <div id="step1">
-    <h3>Virtual Try-On</h3>
-    <div style="padding:40px; border:2px dashed #ccc; cursor:pointer" onclick="document.getElementById('userImg').click()">
-      Upload your photo
+    <div class="step-title">Virtual Fitting Room</div>
+    <p style="color:#666; margin-bottom:20px;">Upload a clear full-body photo for the best result.</p>
+    <div style="padding:60px 20px; border:2px dashed #ddd; border-radius:16px; cursor:pointer; background:rgba(0,0,0,0.02)" 
+         onclick="document.getElementById('userImg').click()" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.02)'">
+      <span style="font-size:40px;">📸</span><br>
+      <strong style="display:block; margin-top:10px;">Click to Upload Photo</strong>
     </div>
     <input id="userImg" type="file" hidden accept="image/*">
   </div>
   <div id="step2" style="display:none">
-    <div class="loader"></div>
-    <p id="loaderText">AI is tailoring your outfit... please wait</p>
+    <div class="loader-container">
+      <div class="loader"></div>
+      <div class="step-title">AI is Tailoring...</div>
+      <p id="loaderText" style="color:#666;">Our AI is fitting the garment to your body. This takes about 15-30 seconds.</p>
+    </div>
   </div>
   <div id="step3" style="display:none">
+    <div class="step-title">Your New Look</div>
     <div class="compare" id="compareContainer">
       <img id="afterImg" crossorigin="anonymous">
       <div id="mask"><img id="beforeImg"></div>
       <input type="range" class="range" id="slider" min="0" max="100" value="50">
     </div>
-    <div style="margin-top:10px; display:flex; justify-content:center;">
-        <button class="tryon-btn" onclick="resetTryOn()" style="background:#666">Try Another</button>
-        <button class="tryon-btn" id="downloadBtn">Download Result</button>
+    <div style="margin-top:20px; display:flex; justify-content:center;">
+        <button class="tryon-btn" onclick="resetTryOn()" style="background:#f1f1f1; color:#333;">Try Another</button>
+        <button class="tryon-btn" id="downloadBtn">Download Look</button>
     </div>
   </div>
 </div>`;
@@ -96,10 +111,7 @@ window.resetTryOn = () => {
   document.getElementById("step2").style.display="none";
   document.getElementById("step1").style.display="block";
   document.getElementById("userImg").value = "";
-  if(slider && mask) {
-    slider.value = 50;
-    mask.style.width = "50%";
-  }
+  if(slider && mask) { slider.value = 50; mask.style.width = "50%"; }
 };
 
 document.getElementById("userImg").onchange = e => {
@@ -114,16 +126,14 @@ document.getElementById("userImg").onchange = e => {
     if(out) {
       afterImg.src = out;
       afterImg.onload = () => {
-        // Alignment Sync
         const container = document.getElementById("compareContainer");
         mask.querySelector('img').style.width = container.offsetWidth + "px";
         mask.querySelector('img').style.height = container.offsetHeight + "px";
-        
         document.getElementById("step2").style.display="none";
         document.getElementById("step3").style.display="block";
       };
     } else {
-      alert("AI Processing Failed. Please check your connection.");
+      alert("AI Processing timed out. Please try again with a smaller image.");
       resetTryOn();
     }
   };
@@ -133,14 +143,20 @@ document.getElementById("userImg").onchange = e => {
 async function processImageAI(userImg){
   const prodImg = getProductImage();
   
-  // 🔥 SMART CATEGORY DETECTION (Even if no category in Shopify)
+  // 🔥 ADVANCED KEYWORD DETECTION
   let category = "tops"; 
-  const pageContent = (document.title + " " + document.body.innerText).toLowerCase();
+  const content = (document.title + " " + document.body.innerText).toLowerCase();
   
-  if (pageContent.includes("tracksuit") || pageContent.includes("set") || pageContent.includes("suit")) {
-    category = "one-pieces";
-  } else if (pageContent.includes("pant") || pageContent.includes("trouser") || pageContent.includes("short")) {
-    category = "bottoms";
+  const rules = {
+    "one-pieces": ["tracksuit", "set", "suit", "jumpsuit", "coords", "outfit"],
+    "bottoms": ["pant", "trouser", "short", "skirt", "jean", "legging"]
+  };
+
+  for (let cat in rules) {
+    if (rules[cat].some(word => content.includes(word))) {
+      category = cat;
+      break;
+    }
   }
 
   try {
@@ -154,35 +170,28 @@ async function processImageAI(userImg){
   } catch(e) { return null; }
 }
 
-// 🔥 FIXED DOWNLOAD BUTTON
 document.getElementById("downloadBtn").onclick = async () => {
   try {
     const response = await fetch(afterImg.src);
     const blob = await response.blob();
-    const blobUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = "tryon_result.png";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(blobUrl);
-  } catch (error) {
-    console.error("Download failed:", error);
-    // Fallback in case of CORS issues
-    window.open(afterImg.src, '_blank');
-  }
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "my_style.png";
+    a.click();
+  } catch(e) { window.open(afterImg.src, '_blank'); }
 };
 
 slider.oninput = e => { mask.style.width = e.target.value + "%"; };
 window.openTryon = () => { overlay.style.display="flex"; document.body.classList.add("tryon-open"); };
 
-const cartForm = document.querySelector("form[action*='/cart/add']");
-if(cartForm) {
+// Inject button into Shopify Product Page
+const target = document.querySelector("form[action*='/cart/add']") || document.querySelector(".product-form");
+if(target) {
   const b = document.createElement("button");
   b.type = "button"; b.className = "tryon-btn";
-  b.innerText = "Try it On"; b.style.width="100%";
+  b.innerHTML = "<span>✨</span> Virtual Try-On";
+  b.style.width="100%"; b.style.marginTop="15px";
   b.onclick = openTryon;
-  cartForm.appendChild(b);
+  target.after(b);
 }
 })();
