@@ -22,12 +22,10 @@ body.tryon-open { overflow:hidden; }
   background: var(--bg); width:95%; max-width:500px; border-radius:12px; 
   padding:40px; position:relative; text-align: center; box-shadow: 0 30px 60px rgba(0,0,0,0.3);
 }
-/* ALIGNMENT FIX: Container remains 1:1 or 4:5 ratio */
 .compare { 
   position:relative; width:100%; height:500px; background:var(--gray); 
   overflow:hidden; border-radius:8px; margin-bottom:20px;
 }
-/* Both images must have identical positioning */
 .compare img { 
   width:100% !important; height:100% !important; 
   object-fit: contain !important; 
@@ -37,7 +35,6 @@ body.tryon-open { overflow:hidden; }
   position:absolute; top:0; left:0; bottom:0; width:50%; 
   overflow:hidden; border-right:3px solid #fff; z-index:5; 
 }
-/* Crucial: Mask image must be same size as parent */
 #mask img { width: 420px !important; height: 500px !important; object-fit: contain !important; }
 
 .tryon-btn { 
@@ -46,16 +43,13 @@ body.tryon-open { overflow:hidden; }
   transition: all 0.3s;
 }
 .btn-primary { background: var(--btn-bg); color:#fff; }
-.btn-primary:hover { opacity: 0.9; }
 .btn-secondary { background: none; color:var(--text); border: 1px solid #ddd; margin-right:10px; }
 
 #manualCategory { 
   width:100%; padding:14px; border-radius:4px; border:1px solid #eee; 
   margin:20px 0; background:var(--gray); font-family: inherit;
 }
-.close-btn { 
-  position:absolute; top:15px; right:15px; cursor:pointer; font-size:18px; color:#999;
-}
+.close-btn { position:absolute; top:15px; right:15px; cursor:pointer; font-size:18px; color:#999; }
 .loader { 
   width:40px; height:40px; border:2px solid #eee; border-top:2px solid #111; 
   border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 20px; 
@@ -72,7 +66,6 @@ overlay.innerHTML = `
   <div class="close-btn" id="closeTryon">✕</div>
   <div id="step1">
     <h2 style="font-size:20px; margin-bottom:10px; letter-spacing:-0.5px;">VIRTUAL TRY-ON</h2>
-    <p style="font-size:13px; color:#666; margin-bottom:20px;">Experience the collection on yourself.</p>
     <select id="manualCategory">
         <option value="tops">Tops & Jackets</option>
         <option value="one-pieces">Tracksuits & Full Sets</option>
@@ -110,11 +103,16 @@ const closeFn = () => { overlay.style.display="none"; document.body.classList.re
 document.getElementById("closeTryon").onclick = closeFn;
 window.addEventListener('keydown', (e) => { if(e.key === "Escape") closeFn(); });
 
+// ✅ FIX: Slider Reset Logic
 function resetFn() {
   document.getElementById("step3").style.display="none";
   document.getElementById("step2").style.display="none";
   document.getElementById("step1").style.display="block";
   document.getElementById("userImg").value = "";
+  
+  // Slider ko center mein laane ke liye:
+  slider.value = 50; 
+  mask.style.width = "50%";
 }
 document.getElementById("retryBtn").onclick = resetFn;
 
@@ -160,7 +158,7 @@ document.getElementById("userImg").onchange = e => {
       
       afterImg.src = result;
       afterImg.onload = () => {
-        // ALIGNMENT FIX: Match mask image dimensions to outer container
+        // Alignment Sync
         const container = document.getElementById("compareContainer");
         beforeImgOverlay.style.width = container.offsetWidth + "px";
         beforeImgOverlay.style.height = container.offsetHeight + "px";
@@ -175,7 +173,6 @@ document.getElementById("userImg").onchange = e => {
 slider.oninput = e => { mask.style.width = e.target.value+"%"; };
 window.openTryon = () => { overlay.style.display="flex"; document.body.classList.add("tryon-open"); };
 
-// Product Page Button Integration
 const form = document.querySelector("form[action*='/cart/add']") || document.querySelector(".product-form");
 if(form){
   const btn = document.createElement("button");
