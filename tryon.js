@@ -27,10 +27,10 @@ body.tryon-open { overflow:hidden; }
 #mask { position:absolute; top:0; left:0; bottom:0; width:50%; overflow:hidden; border-right:4px solid #fff; z-index:5; }
 #mask img { width: 550px !important; height: 480px !important; object-fit: cover !important; }
 .range { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:ew-resize; z-index:20; }
-.tryon-btn { margin:10px 8px; padding:12px 28px; background: var(--primary); color:#fff; border-radius:12px; border:none; cursor:pointer; font-weight:600; display: inline-block; }
+.tryon-btn { margin:10px 8px; padding:12px 28px; background: var(--primary); color:#fff; border-radius:12px; border:none; cursor:pointer; font-weight:600; }
 .loader { width:45px; height:45px; border:4px solid #f3f3f3; border-top:4px solid var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 20px; }
 @keyframes spin { to { transform:rotate(360deg); } }
-.close { position:absolute; top:15px; right:15px; cursor:pointer; font-size:20px; z-index: 100; }
+.close-icon { position:absolute; top:15px; right:15px; cursor:pointer; font-size:20px; color:#333; z-index:100; }
 #manualCategory { padding: 10px; border-radius: 8px; border: 1px solid #ddd; width: 100%; margin: 10px 0; }
 `;
 document.head.appendChild(style);
@@ -40,16 +40,16 @@ overlay.className = "tryon-overlay";
 overlay.id = "tryonOverlay";
 overlay.innerHTML = `
 <div class="tryon-box">
-  <div class="close" id="closeBtn">✕</div>
+  <div class="close-icon" id="manualClose">✕</div>
   <div id="step1">
-    <h2>Virtual Fitting Room</h2>
+    <h2 style="margin-top:0;">Virtual Fitting Room</h2>
     <select id="manualCategory">
         <option value="tops">👕 Top</option>
-        <option value="one-pieces">🥋 Full Suit/Tracksuit</option>
-        <option value="bottoms">👖 Bottom</option>
+        <option value="one-pieces">🥋 Tracksuit / Full Suit</option>
+        <option value="bottoms">👖 Bottoms</option>
     </select>
-    <div style="padding:30px; border:2px dashed #ddd; border-radius:16px; cursor:pointer;" onclick="document.getElementById('userImg').click()">
-      <strong>📸 Upload Your Photo</strong>
+    <div style="padding:40px; border:2px dashed #ccc; border-radius:16px; cursor:pointer;" onclick="document.getElementById('userImg').click()">
+      <strong>📸 Click to Upload Photo</strong>
     </div>
     <input id="userImg" type="file" hidden accept="image/*">
   </div>
@@ -60,116 +60,105 @@ overlay.innerHTML = `
   <div id="step3" style="display:none">
     <div class="compare" id="compareContainer">
       <img id="afterImg" crossorigin="anonymous">
-      <div id="mask"><img id="beforeImgOverlay"></div>
+      <div id="mask"><img id="beforeImgRef"></div>
       <input type="range" class="range" id="slider" min="0" max="100" value="50">
     </div>
     <div style="margin-top:20px;">
-        <button class="tryon-btn" id="retryBtn" style="background:#eee; color:#333;">Try Another</button>
+        <button class="tryon-btn" id="retryBtn" style="background:#ddd; color:#333;">Try Another</button>
         <button class="tryon-btn" id="downloadBtn">Download Look</button>
     </div>
   </div>
 </div>`;
 document.body.appendChild(overlay);
 
-const beforeImgOverlay = document.getElementById("beforeImgOverlay"),
-      afterImg = document.getElementById("afterImg"),
+const afterImg = document.getElementById("afterImg"),
+      beforeImgRef = document.getElementById("beforeImgRef"),
       mask = document.getElementById("mask"),
       slider = document.getElementById("slider");
 
-// ✅ 1. ESC Key & Close logic Fixed
-const closePopup = () => { 
-    overlay.style.display="none"; 
-    document.body.classList.remove("tryon-open"); 
-    resetTryOn(); 
+// ✅ 1. ESC Key aur Manual Close logic
+const forceClose = () => {
+    overlay.style.display = "none";
+    document.body.classList.remove("tryon-open");
+    resetState();
 };
 
-document.getElementById("closeBtn").onclick = closePopup;
-document.addEventListener('keydown', (e) => { if (e.key === "Escape") closePopup(); });
+document.getElementById("manualClose").onclick = forceClose;
+window.addEventListener('keydown', (e) => { if(e.key === "Escape") forceClose(); });
 
-// ✅ 2. Download Function with absolute path fix
-document.getElementById("downloadBtn").onclick = async function() {
-    const imgUrl = afterImg.src;
-    if(!imgUrl) return;
-    try {
-        const response = await fetch(imgUrl);
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = blobUrl;
-        link.download = "my-ai-look.jpg";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    } catch (e) {
-        window.open(imgUrl, '_blank');
-    }
+function resetState() {
+    document.getElementById("step3").style.display="none";
+    document.getElementById("step2").style.display="none";
+    document.getElementById("step1").style.display="block";
+    document.getElementById("userImg").value = "";
+}
+
+document.getElementById("retryBtn").onclick = resetState;
+
+// ✅ 2. Download Logic (Blob Method)
+document.getElementById("downloadBtn").onclick = async () => {
+    if(!afterImg.src) return;
+    const response = await fetch(afterImg.src);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "my-look.jpg";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 };
-
-window.resetTryOn = () => {
-  document.getElementById("step3").style.display="none";
-  document.getElementById("step2").style.display="none";
-  document.getElementById("step1").style.display="block";
-  document.getElementById("userImg").value = "";
-  afterImg.src = "";
-};
-
-document.getElementById("retryBtn").onclick = resetTryOn;
 
 document.getElementById("userImg").onchange = e => {
   const file = e.target.files[0];
   if(!file) return;
   const reader = new FileReader();
   reader.onload = async ev => {
-    const userBase64 = ev.target.result;
-    beforeImgOverlay.src = userBase64; // Set mask image immediately
+    const userImgData = ev.target.result;
+    beforeImgRef.src = userImgData; 
     
     document.getElementById("step1").style.display="none";
     document.getElementById("step2").style.display="block";
 
     try {
-      const startRes = await fetch(BACKEND_URL+"/tryon/start", {
+      const res = await fetch(BACKEND_URL+"/tryon/start", {
         method:"POST",
-        headers:{ "Content-Type":"application/json" },
+        headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
-          userImage: userBase64,
+          userImage: userImgData,
           productImage: getProductImage(),
           category: document.getElementById("manualCategory").value
         })
       });
-      const data = await startRes.json();
-      
-      let attempts = 0, resultUrl = null;
-      while(attempts < 40 && !resultUrl){
-        await new Promise(r=>setTimeout(r,3000));
-        const statusRes = await fetch(BACKEND_URL+"/tryon/status/"+data.jobId);
-        const statusData = await statusRes.json();
-        if(statusData.status==="completed"){ resultUrl = statusData.resultUrl; break; }
-        else if(statusData.status==="failed") throw new Error("AI failed");
-        attempts++;
+      const { jobId } = await res.json();
+
+      // ✅ 3. Speed Check: Polling logic optimized
+      let result = null;
+      for(let i=0; i<40; i++) {
+        await new Promise(r => setTimeout(r, 2500)); // Thora kam delay for speed
+        const status = await (await fetch(BACKEND_URL+"/tryon/status/"+jobId)).json();
+        if(status.status === "completed") { result = status.resultUrl; break; }
+        if(status.status === "failed") throw new Error("AI failed");
       }
 
-      if(!resultUrl) throw new Error("Timeout");
+      if(!result) throw new Error("Request Timed Out");
 
-      // ✅ 3. Improved Image Loading Logic
-      afterImg.src = resultUrl;
+      // ✅ 4. Visibility Fix: Force render before showing step3
+      afterImg.src = result;
       afterImg.onload = () => {
-        // Ensure beforeImgOverlay matches dimensions
-        beforeImgOverlay.style.width = "550px";
-        beforeImgOverlay.style.height = "480px";
-        
         document.getElementById("step2").style.display="none";
         document.getElementById("step3").style.display="block";
       };
-      
-    } catch(err){
+
+    } catch(err) {
       alert("Error: " + err.message);
-      resetTryOn();
+      resetState();
     }
   };
   reader.readAsDataURL(file);
 };
 
-slider.oninput = e => { mask.style.width = e.target.value+"%"; };
+slider.oninput = e => { mask.style.width = e.target.value + "%"; };
 window.openTryon = () => { overlay.style.display="flex"; document.body.classList.add("tryon-open"); };
 
 const target = document.querySelector("form[action*='/cart/add']") || document.querySelector(".product-form");
