@@ -10,7 +10,7 @@ function getProductImage() {
   return img ? (img.content || img.src.split('?')[0]) : null;
 }
 
-// --- 1. STYLES (Wapas add kar diye hain) ---
+// --- 1. STYLES (Added instructions & privacy styling) ---
 const style = document.createElement("style");
 style.innerHTML = `
 :root { --primary: #000; --accent: #3498db; --glass: rgba(255, 255, 255, 0.95); }
@@ -58,11 +58,16 @@ body.tryon-open { overflow:hidden; }
   cursor:pointer; transition: 0.2s; color:#666;
 }
 .close:hover { background:#e74c3c; color:#fff; }
-.step-title { font-size: 22px; font-weight: 700; margin-bottom: 15px; color: #1a1a1a; }
+.step-title { font-size: 22px; font-weight: 700; margin-bottom: 5px; color: #1a1a1a; }
+.instruction-text { font-size: 13px; color: #666; margin-top: 15px; line-height: 1.4; }
+.privacy-badge { 
+  display: inline-block; background: #e8f4fd; color: #2980b9; 
+  padding: 4px 12px; border-radius: 20px; font-size: 11px; margin-top: 10px; font-weight: 600;
+}
 `;
 document.head.appendChild(style);
 
-// --- 2. MODAL HTML (Wapas add kar diya) ---
+// --- 2. MODAL HTML (Updated with Instructions & Privacy) ---
 const overlay = document.createElement("div");
 overlay.className = "tryon-overlay";
 overlay.id = "tryonOverlay";
@@ -71,14 +76,28 @@ overlay.innerHTML = `
   <div class="close" onclick="closeTryon()">✕</div>
   <div id="step1">
     <div class="step-title">Virtual Fitting Room</div>
-    <div style="padding:40px; border:2px dashed #ddd; border-radius:16px; cursor:pointer;" onclick="document.getElementById('userImg').click()">
-      <span style="font-size:40px;">📸</span><br><strong>Upload Photo</strong>
+    <div class="privacy-badge">🔒 Photos are auto-deleted after use</div>
+    
+    <div style="padding:40px; border:2px dashed #ddd; border-radius:16px; cursor:pointer; margin-top:20px; background:#f9f9f9;" 
+         onclick="document.getElementById('userImg').click()"
+         onmouseover="this.style.borderColor='#3498db'" 
+         onmouseout="this.style.borderColor='#ddd'">
+      <span style="font-size:40px;">📸</span><br>
+      <strong>Upload Your Photo</strong>
+      <p style="font-size:12px; color:#888;">Supports JPG, PNG</p>
     </div>
+
+    <div class="instruction-text">
+      <strong>💡 For Best Results:</strong><br>
+      Wear a plain T-shirt or body-fit clothes. Avoid bulky jackets or loose outfits for a perfect fit.
+    </div>
+
     <input id="userImg" type="file" hidden accept="image/*">
   </div>
   <div id="step2" style="display:none">
     <div class="loader"></div>
     <div class="step-title">AI is Tailoring...</div>
+    <p style="color:#666;">This usually takes 10-15 seconds</p>
   </div>
   <div id="step3" style="display:none">
     <div class="step-title">Your New Look</div>
@@ -123,7 +142,6 @@ document.getElementById("userImg").onchange = e => {
     document.getElementById("step1").style.display="none";
     document.getElementById("step2").style.display="block";
 
-    // 🔥 SMART CATEGORY DETECTION
     let category = "tops"; 
     const content = (document.title + " " + document.body.innerText).toLowerCase();
     const rules = {
@@ -143,13 +161,12 @@ document.getElementById("userImg").onchange = e => {
         body: JSON.stringify({
           userImage: ev.target.result,
           productImage: getProductImage(),
-          category: category // Ab tracksuit sahi ayega
+          category: category 
         })
       });
       const data = await startRes.json();
       if(!data.jobId) throw new Error("Server Error");
 
-      // Polling result
       let attempts = 0, result = null;
       while(attempts < 30 && !result){
         await new Promise(r=>setTimeout(r,3000));
@@ -194,7 +211,6 @@ document.getElementById("downloadBtn").onclick = async function(){
 slider.oninput = e => { mask.style.width = e.target.value+"%"; };
 window.openTryon = () => { overlay.style.display="flex"; document.body.classList.add("tryon-open"); };
 
-// --- BUTTON INJECTION ---
 const target = document.querySelector("form[action*='/cart/add']") || document.querySelector(".product-form");
 if(target){
   const b = document.createElement("button");
