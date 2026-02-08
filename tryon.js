@@ -88,15 +88,49 @@ document.body.appendChild(overlay);
 const beforeImg = document.getElementById("beforeImg"),
       afterImg = document.getElementById("afterImg"),
       mask = document.getElementById("mask"),
-      slider = document.getElementById("slider");
+      slider = document.getElementById("slider"),
+      downloadBtn = document.getElementById("downloadBtn");
 
-window.closeTryon = () => { overlay.style.display="none"; document.body.classList.remove("tryon-open"); resetTryOn(); };
+// ✅ ESC Key Function
+document.addEventListener('keydown', (e) => {
+    if (e.key === "Escape" && overlay.style.display === "flex") {
+        closeTryon();
+    }
+});
+
+window.closeTryon = () => { 
+    overlay.style.display="none"; 
+    document.body.classList.remove("tryon-open"); 
+    resetTryOn(); 
+};
 
 window.resetTryOn = () => {
   document.getElementById("step3").style.display="none";
   document.getElementById("step2").style.display="none";
   document.getElementById("step1").style.display="block";
   document.getElementById("userImg").value = "";
+  afterImg.src = ""; // Clear image to avoid flicker
+};
+
+// ✅ Download Look Function
+downloadBtn.onclick = async () => {
+    if(!afterImg.src) return;
+    try {
+        const response = await fetch(afterImg.src);
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'my-new-look.jpg';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    } catch (err) {
+        console.error("Download failed:", err);
+        // Fallback for browsers with restricted blob access
+        window.open(afterImg.src, '_blank');
+    }
 };
 
 document.getElementById("userImg").onchange = e => {
@@ -108,7 +142,6 @@ document.getElementById("userImg").onchange = e => {
     document.getElementById("step1").style.display="none";
     document.getElementById("step2").style.display="block";
 
-    // ✅ FIXED: Using Manual Selection + Smart Fallback
     let selectedCategory = document.getElementById("manualCategory").value; 
     
     try {
@@ -135,11 +168,15 @@ document.getElementById("userImg").onchange = e => {
       }
 
       if(!result) throw new Error("Timeout");
+      
+      // ✅ Fixed: Result Pic loading logic
       afterImg.src = result;
       afterImg.onload = () => {
         const container = document.getElementById("compareContainer");
-        mask.querySelector('img').style.width = container.offsetWidth + "px";
-        mask.querySelector('img').style.height = container.offsetHeight + "px";
+        const maskImg = mask.querySelector('img');
+        maskImg.src = beforeImg.src; // Ensure beforeImg is inside mask
+        maskImg.style.width = container.offsetWidth + "px";
+        maskImg.style.height = container.offsetHeight + "px";
         document.getElementById("step2").style.display="none";
         document.getElementById("step3").style.display="block";
       };
