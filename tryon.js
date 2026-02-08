@@ -15,66 +15,67 @@ style.innerHTML = `
 :root { --primary: #000; --accent: #007AFF; --success: #28a745; --danger: #dc3545; --bg: #ffffff; }
 body.tryon-open { overflow:hidden; }
 .tryon-overlay{
-  position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter: blur(12px);
+  position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter: blur(8px);
   display:none; align-items:center; justify-content:center; z-index:1000000;
 }
 .tryon-box{
-  background: var(--bg); width:95%; max-width:500px; border-radius:20px; 
-  padding:30px; position:relative; text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+  background: var(--bg); width:90%; max-width:440px; border-radius:15px; 
+  padding:25px; position:relative; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
 }
 
-/* --- RESTORED CATEGORY & LABELS --- */
-.privacy-badge { display: inline-block; background: #f0f7ff; color: #007AFF; padding: 5px 12px; border-radius: 15px; font-size: 11px; margin-bottom: 12px; font-weight: 700; }
-#catSelect { width:100%; padding:12px; border-radius:10px; border:1px solid #ddd; margin-top:5px; background:#fff; font-size:14px; }
+/* --- RESTORED ORIGINAL UI ELEMENTS --- */
+.privacy-badge { display: inline-block; background: #f0f7ff; color: #007AFF; padding: 4px 10px; border-radius: 12px; font-size: 10px; margin-bottom: 10px; font-weight: 700; }
+#catSelect { width:100%; padding:10px; border-radius:8px; border:1px solid #ddd; margin-top:5px; font-size:13px; outline:none; }
 
-/* --- UPLOAD BOX (BLUE HOVER EFFECT) --- */
+/* --- UPLOAD AREA WITH BLUE HOVER --- */
 .upload-area { 
-  padding:35px 20px; border:2px dashed #ccc; border-radius:15px; cursor:pointer; 
-  background:#fafafa; transition: all 0.3s ease; margin-top:15px;
+  padding:30px 15px; border:2px dashed #ccc; border-radius:12px; cursor:pointer; 
+  background:#fafafa; transition: all 0.2s ease; margin-top:10px;
 }
 .upload-area:hover { 
   border-color: var(--accent); 
-  background: #f0f7ff; /* Becomes blueish on hover */
+  background: #f0f7ff; 
   color: var(--accent);
 }
 
-/* --- ALIGNMENT & SLIDER FIX --- */
+/* --- COMPACT ALIGNMENT FIX --- */
 .compare-container { 
-  position:relative; width:100%; height:500px; background:#f0f0f0; 
-  border-radius:15px; overflow:hidden; margin: 20px 0;
+  position:relative; width:100%; height:420px; background:#f4f4f4; 
+  border-radius:12px; overflow:hidden; margin: 15px 0;
 }
 .compare-container img, #mask img { 
   width:100% !important; height:100% !important; 
-  object-fit: contain !important; /* Fixed alignment for tracksuit/models */
+  object-fit: contain !important; 
   position:absolute; top:0; left:0;
 }
 #mask { 
   position:absolute; top:0; left:0; bottom:0; width:50%; 
-  overflow:hidden; border-right:3px solid #fff; z-index:5; 
+  overflow:hidden; border-right:2px solid #fff; z-index:5; 
 }
 
 /* --- BUTTONS & HOVERS --- */
-.close-btn-circle { 
-    position:absolute; top:15px; right:15px; width:32px; height:32px; 
+.close-btn { 
+    position:absolute; top:12px; right:12px; width:28px; height:28px; 
     background:#eee; border-radius:50%; display:flex; align-items:center; 
-    justify-content:center; cursor:pointer; font-weight:bold; transition: 0.2s;
+    justify-content:center; cursor:pointer; font-size:14px; transition: 0.2s;
 }
-.close-btn-circle:hover { background: var(--danger); color: white; }
+.close-btn:hover { background: var(--danger); color: white; }
 
-.tryon-btn { flex:1; padding:15px; border-radius:10px; border:none; cursor:pointer; font-weight:700; font-size:14px; transition: 0.3s; }
+.tryon-btn { flex:1; padding:12px; border-radius:8px; border:none; cursor:pointer; font-weight:700; font-size:13px; transition: 0.3s; }
 .btn-black { background: #000; color:#fff; }
-.btn-grey { background: #f0f0f0; color:#333; margin-right:10px; }
-.btn-download-done { background: var(--success) !important; color: white !important; }
+.btn-grey { background: #f0f0f0; color:#333; margin-right:8px; }
+.btn-success-anim { background: var(--success) !important; color: white !important; }
 
-/* Main External Button */
+/* Main Trigger Button */
 .main-trigger-btn {
-    width:100%; margin-top:10px; padding:18px; background:#000; color:#fff; 
-    border-radius:12px; border:none; font-size:18px; font-weight:800; 
-    cursor:pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    width:100%; margin-top:10px; padding:15px; background:#000; color:#fff; 
+    border-radius:10px; border:none; font-size:16px; font-weight:800; 
+    cursor:pointer; transition: transform 0.1s;
 }
+.main-trigger-btn:active { transform: scale(0.98); }
 
-.instruction-text { font-size:12px; color:#777; margin-top:15px; line-height:1.4; }
-.loader-spinner { width:35px; height:35px; border:3px solid #f3f3f3; border-top:3px solid #000; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 15px; }
+.bottom-info { font-size:11px; color:#888; margin-top:12px; line-height:1.3; }
+.loader-spin { width:30px; height:30px; border:3px solid #f3f3f3; border-top:3px solid #000; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 10px; }
 @keyframes spin { to { transform:rotate(360deg); } }
 `;
 document.head.appendChild(style);
@@ -83,33 +84,32 @@ const overlay = document.createElement("div");
 overlay.className = "tryon-overlay";
 overlay.innerHTML = `
 <div class="tryon-box">
-  <div class="close-btn-circle" id="closeX">✕</div>
+  <div class="close-btn" id="closeX">✕</div>
   <div id="step1">
     <div class="privacy-badge">PRIVACY PROTECTED</div>
-    <h2 style="margin:0 0 20px;">Virtual Try-On</h2>
+    <h2 style="margin:0 0 15px; font-size:20px;">Virtual Try-On</h2>
     
     <div style="text-align:left;">
-      <label style="font-size:12px; font-weight:bold; color:#555;">CATEGORY</label>
+      <label style="font-size:11px; font-weight:bold;">CHOOSE CATEGORY</label>
       <select id="catSelect">
-        <option value="tops">Tops (T-shirt, Jackets, Coats)</option>
+        <option value="tops">Tops (Shirts, Jackets, Coats)</option>
         <option value="one-pieces">One-Pieces (Tracksuits, Dresses)</option>
         <option value="bottoms">Bottoms (Pants, Shorts, Skirts)</option>
       </select>
     </div>
 
-    <div class="upload-area" onclick="document.getElementById('imgInput').click()">
-      <span style="font-size:40px;">📷</span><br>
-      <strong style="display:block; margin-top:10px;">UPLOAD PORTRAIT</strong>
+    <div class="upload-area" id="upBox" onclick="document.getElementById('imgInput').click()">
+      <span style="font-size:32px;">📷</span><br>
+      <strong style="display:block; margin-top:8px; font-size:14px;">UPLOAD YOUR PHOTO</strong>
     </div>
     
-    <p class="instruction-text">For best results, try a <b>standing</b> and <b>clear</b> picture with good lighting.</p>
+    <p class="bottom-info">For best results, try a <b>standing</b> and <b>clear</b> picture with good lighting.</p>
     <input id="imgInput" type="file" hidden accept="image/*">
   </div>
 
-  <div id="step2" style="display:none; padding:30px 0;">
-    <div class="loader-spinner"></div>
-    <h3>AI Tailoring...</h3>
-    <p style="font-size:13px; color:#888;">Generating your custom fit.</p>
+  <div id="step2" style="display:none; padding:20px 0;">
+    <div class="loader-spin"></div>
+    <h3 style="font-size:16px;">Processing...</h3>
   </div>
 
   <div id="step3" style="display:none">
@@ -132,31 +132,29 @@ const userImgPrev = document.getElementById("userImgPrev"),
       sliderUI = document.getElementById("sliderUI"),
       saveBtn = document.getElementById("saveAction");
 
-const closeAll = () => { overlay.style.display="none"; document.body.classList.remove("tryon-open"); resetAll(); };
-document.getElementById("closeX").onclick = closeAll;
-
 function resetAll() {
   document.getElementById("step3").style.display="none";
   document.getElementById("step2").style.display="none";
   document.getElementById("step1").style.display="block";
   sliderUI.value = 50; mask.style.width = "50%";
-  saveBtn.classList.remove("btn-download-done");
+  saveBtn.classList.remove("btn-success-anim");
   saveBtn.innerText = "Download Look";
 }
+
+document.getElementById("closeX").onclick = () => { overlay.style.display="none"; document.body.classList.remove("tryon-open"); resetAll(); };
 document.getElementById("retryAction").onclick = resetAll;
 
-// Save Button Green Effect
 saveBtn.onclick = async () => {
     if(!resImg.src) return;
-    saveBtn.classList.add("btn-download-done");
+    saveBtn.classList.add("btn-success-anim");
     saveBtn.innerText = "✅ Saved!";
     const r = await fetch(resImg.src);
     const b = await r.blob();
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(b); a.download = "tryon_result.jpg";
+    a.href = URL.createObjectURL(b); a.download = "my_style.jpg";
     a.click();
     setTimeout(() => {
-        saveBtn.classList.remove("btn-download-done");
+        saveBtn.classList.remove("btn-success-anim");
         saveBtn.innerText = "Download Look";
     }, 2000);
 };
@@ -192,14 +190,13 @@ document.getElementById("imgInput").onchange = e => {
       
       resImg.src = finalUrl;
       resImg.onload = () => {
-        // Alignment Force Sync
         const box = document.getElementById("viewBox");
         userImgPrev.style.width = box.offsetWidth + "px";
         userImgPrev.style.height = box.offsetHeight + "px";
         document.getElementById("step2").style.display="none";
         document.getElementById("step3").style.display="block";
       };
-    } catch(err){ alert(err.message); resetAll(); }
+    } catch(err){ alert("Try again: " + err.message); resetAll(); }
   };
   reader.readAsDataURL(file);
 };
