@@ -12,210 +12,198 @@ function getProductImage() {
 
 const style = document.createElement("style");
 style.innerHTML = `
-:root { --primary: #222; --accent: #3498db; --success: #2ecc71; --danger: #ff4757; --bg: #ffffff; }
+:root { --primary: #000; --accent: #3498db; --glass: rgba(255, 255, 255, 0.98); }
 body.tryon-open { overflow:hidden; }
 .tryon-overlay{
-  position:fixed; inset:0; background:rgba(0,0,0,0.75); backdrop-filter: blur(10px);
+  position:fixed; inset:0; background:rgba(0,0,0,0.8); backdrop-filter: blur(10px);
   display:none; align-items:center; justify-content:center; z-index:1000000;
 }
 .tryon-box{
-  background: var(--bg); width:95%; max-width:520px; border-radius:24px; 
-  padding:35px; position:relative; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.2);
+  background: var(--glass); width:95%; max-width:520px; border-radius:28px; 
+  padding:35px; position:relative; text-align: center; border: 1px solid #eee;
 }
 
-/* --- RESTORED OLD UI STYLES --- */
-.privacy-badge { display: inline-block; background: #e8f4fd; color: #2980b9; padding: 6px 15px; border-radius: 20px; font-size: 12px; margin-bottom: 15px; font-weight: 600; }
-.upload-box { padding:40px 20px; border:3px dashed #eee; background:#f9f9f9; cursor:pointer; border-radius:16px; transition:all 0.2s; }
-.upload-box:hover { border-color: var(--accent); background:#f0f8ff; }
+/* --- OLD UI RESTORED --- */
+.privacy-badge { display: inline-block; background: #e8f4fd; color: #2980b9; padding: 6px 15px; border-radius: 20px; font-size: 11px; margin-bottom: 15px; font-weight: 700; text-transform: uppercase; }
+.upload-area { padding:45px 20px; border:2px dashed #ddd; border-radius:20px; cursor:pointer; background:#fafafa; transition: 0.3s; }
+.upload-area:hover { border-color: var(--accent); background:#f0f7ff; }
 
-/* --- CRITICAL ALIGNMENT FIX --- */
-.compare { 
-  position:relative; width:100%; height:550px; /* Fixed height for consistency */
-  background:#f4f4f4; overflow:hidden; border-radius:16px; margin: 20px 0;
+/* --- CLOSE BUTTON (CIRCLE + RED HOVER) --- */
+.close-circle {
+  position:absolute; top:20px; right:20px; width:35px; height:35px; 
+  background:#eee; border-radius:50%; display:flex; align-items:center; 
+  justify-content:center; cursor:pointer; font-weight:bold; transition: 0.3s;
 }
-/* Both images MUST have identical positioning rules */
-.compare img, #mask img { 
+.close-circle:hover { background:#ff4757; color:#fff; transform: rotate(90deg); }
+
+/* --- ALIGNMENT FIX (PERFECT OVERLAY) --- */
+.compare-wrapper { 
+  position:relative; width:100%; height:550px; background:#111; 
+  border-radius:18px; overflow:hidden; margin: 20px 0;
+}
+.compare-wrapper img { 
   width:100% !important; height:100% !important; 
-  object-fit: contain !important; /* The key to perfect alignment */
+  object-fit: contain !important; /* Forces images to stay in original ratio */
   position:absolute; top:0; left:0;
 }
 #mask { 
   position:absolute; top:0; left:0; bottom:0; width:50%; 
-  overflow:hidden; border-right:3px solid rgba(255,255,255,0.8); z-index:5; 
+  overflow:hidden; border-right:3px solid #fff; z-index:5; 
+}
+#mask img { width: 450px !important; height: 550px !important; object-fit: contain !important; }
+
+/* --- BUTTONS --- */
+.tryon-btn { flex:1; padding:16px; border-radius:12px; border:none; cursor:pointer; font-weight:700; font-size:14px; transition: 0.3s; }
+.btn-black { background: #000; color:#fff; }
+.btn-light { background: #f0f0f0; color:#333; margin-right:10px; }
+.btn-download-success { background: #2ecc71 !important; color: white !important; }
+
+/* MAIN EXTERNAL BUTTON */
+.main-tryon-trigger {
+  width:100%; margin-top:15px; padding:20px; background:#000; color:#fff; 
+  border-radius:12px; border:none; font-size:18px; font-weight:900; 
+  cursor:pointer; box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
-/* --- NEW BUTTON STYLES --- */
-.tryon-btn { 
-  flex:1; padding:16px; border-radius:12px; border:none; cursor:pointer; 
-  font-weight:700; font-size:15px; transition: all 0.3s;
-}
-.btn-primary { background: var(--primary); color:#fff; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.3); }
-.btn-secondary { background: #f4f4f4; color:#333; margin-right:10px; }
-.btn-success-state { background: var(--success) !important; color: white !important; }
-
-/* Main Button (Bigger & Nicer) */
-.tryon-main-btn {
-    width: 100%; margin-top: 15px; padding: 18px;
-    font-size: 18px; font-weight: 800; letter-spacing: 1px;
-    background: linear-gradient(135deg, #333, #000); color: #fff;
-    border: none; border-radius: 14px; cursor: pointer;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.2); transition: transform 0.2s;
-}
-.tryon-main-btn:hover { transform: scale(1.02); }
-
-/* Close Button (Circle & Red Hover) */
-.close-btn { 
-    position:absolute; top:20px; right:20px; cursor:pointer; 
-    width:36px; height:36px; background:#f0f0f0; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    font-size:18px; color:#555; transition: all 0.2s; z-index: 10;
-}
-.close-btn:hover { background: var(--danger); color: white; transform: rotate(90deg); }
-
-#manualCategory { width:100%; padding:14px; border-radius:12px; border:1px solid #eee; margin:15px 0; font-family:inherit; background:#f9f9f9; }
-.loader { width:45px; height:45px; border:4px solid #f3f3f3; border-top:4px solid var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 25px; }
+.loader-ai { width:40px; height:40px; border:3px solid #f3f3f3; border-top:3px solid #000; border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 20px; }
 @keyframes spin { to { transform:rotate(360deg); } }
 `;
 document.head.appendChild(style);
 
 const overlay = document.createElement("div");
 overlay.className = "tryon-overlay";
-overlay.id = "tryonOverlay";
 overlay.innerHTML = `
 <div class="tryon-box">
-  <div class="close-btn" id="closeTryon">✕</div>
+  <div class="close-circle" id="closeAction">✕</div>
   <div id="step1">
-    <div class="privacy-badge">🔒 Photos are auto-deleted after use</div>
-    <h2 style="font-size:24px; margin:10px 0 25px;">Virtual Fitting Room</h2>
-    <select id="manualCategory">
-        <option value="tops">👕 Tops & Jackets</option>
-        <option value="one-pieces">🥋 Tracksuits & Full Sets</option>
-        <option value="bottoms">👖 Bottoms & Pants</option>
-    </select>
-    <div class="upload-box" onclick="document.getElementById('userImg').click()">
-      <span style="font-size:40px;">📸</span><br>
-      <strong style="display:block; margin-top:10px; font-size:16px;">Upload Your Photo</strong>
-      <p style="color:#888; font-size:13px; margin-top:5px;">Clear front-facing photos work best</p>
+    <div class="privacy-badge">🔒 Encrypted & Private</div>
+    <h2 style="margin-bottom:25px;">Virtual Try-On</h2>
+    <div style="text-align:left; margin-bottom:15px;">
+      <label style="font-size:12px; font-weight:bold;">Select Category:</label>
+      <select id="catSelect" style="width:100%; padding:12px; margin-top:5px; border-radius:10px; border:1px solid #ddd;">
+        <option value="tops">👕 Tops / Jackets</option>
+        <option value="one-pieces">🥋 Full Suits / Tracksuits</option>
+        <option value="bottoms">👖 Pants / Shorts</option>
+      </select>
     </div>
-    <input id="userImg" type="file" hidden accept="image/*">
+    <div class="upload-area" onclick="document.getElementById('fileIn').click()">
+      <span style="font-size:45px;">📸</span><br>
+      <strong style="display:block; margin-top:10px;">Upload Your Photo</strong>
+    </div>
+    <input id="fileIn" type="file" hidden accept="image/*">
   </div>
   <div id="step2" style="display:none; padding:40px 0;">
-    <div class="loader"></div>
-    <h3 style="margin:0;">AI is Tailoring...</h3>
-    <p style="color:#666; margin-top:10px;">This usually takes 15-25 seconds.</p>
+    <div class="loader-ai"></div>
+    <h3>Creating Your Look...</h3>
   </div>
   <div id="step3" style="display:none">
-    <div class="compare" id="compareContainer">
-      <img id="afterImg" crossorigin="anonymous">
-      <div id="mask"><img id="beforeImgOverlay"></div>
-      <input type="range" class="range" id="slider" min="0" max="100" value="50" style="position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:ew-resize; z-index:10;">
+    <div class="compare-wrapper" id="container">
+      <img id="outImg" crossorigin="anonymous">
+      <div id="mask"><img id="inImg"></div>
+      <input type="range" id="slid" min="0" max="100" value="50" style="position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:ew-resize; z-index:10;">
     </div>
-    <div style="display:flex; margin-top:25px;">
-        <button class="tryon-btn btn-secondary" id="retryBtn">Try Another</button>
-        <button class="tryon-btn btn-primary" id="downloadBtn">Download Look</button>
+    <div style="display:flex; margin-top:20px;">
+        <button class="tryon-btn btn-light" id="retry">Try Another</button>
+        <button class="tryon-btn btn-black" id="down">Download Look</button>
     </div>
   </div>
 </div>`;
 document.body.appendChild(overlay);
 
-const beforeImgOverlay = document.getElementById("beforeImgOverlay"),
-      afterImg = document.getElementById("afterImg"),
+const inImg = document.getElementById("inImg"),
+      outImg = document.getElementById("outImg"),
       mask = document.getElementById("mask"),
-      slider = document.getElementById("slider"),
-      downloadBtn = document.getElementById("downloadBtn");
+      slid = document.getElementById("slid"),
+      downBtn = document.getElementById("down");
 
-const closeFn = () => { overlay.style.display="none"; document.body.classList.remove("tryon-open"); resetFn(); };
-document.getElementById("closeTryon").onclick = closeFn;
-window.addEventListener('keydown', (e) => { if(e.key === "Escape") closeFn(); });
+// Logic
+const close = () => { overlay.style.display="none"; document.body.classList.remove("tryon-open"); reset(); };
+document.getElementById("closeAction").onclick = close;
+window.addEventListener('keydown', (e) => { if(e.key === "Escape") close(); });
 
-function resetFn() {
+function reset() {
   document.getElementById("step3").style.display="none";
   document.getElementById("step2").style.display="none";
   document.getElementById("step1").style.display="block";
-  document.getElementById("userImg").value = "";
-  // Slider Reset
-  slider.value = 50; mask.style.width = "50%";
-  // Reset download button state just in case
-  downloadBtn.innerText = "Download Look";
-  downloadBtn.classList.remove("btn-success-state");
+  slid.value = 50; mask.style.width = "50%";
+  downBtn.classList.remove("btn-download-success");
+  downBtn.innerText = "Download Look";
 }
-document.getElementById("retryBtn").onclick = resetFn;
+document.getElementById("retry").onclick = reset;
 
-// ✅ Download Button Green Effect
-downloadBtn.onclick = async () => {
-    if(!afterImg.src) return;
+// ✅ Download Logic + Green Effect
+downBtn.onclick = async () => {
+    if(!outImg.src) return;
+    downBtn.classList.add("btn-download-success");
+    downBtn.innerText = "✅ Saved";
     
-    // Visual Feedback
-    const originalText = downloadBtn.innerText;
-    downloadBtn.innerText = "✅ Saved!";
-    downloadBtn.classList.add("btn-success-state");
-    setTimeout(() => {
-        downloadBtn.innerText = originalText;
-        downloadBtn.classList.remove("btn-success-state");
-    }, 2000);
-
-    const res = await fetch(afterImg.src);
-    const b = await res.blob();
-    const u = URL.createObjectURL(b);
+    const res = await fetch(outImg.src);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = u; a.download = "my-ai-look.jpg";
-    document.body.appendChild(a); a.click();
-    document.body.removeChild(a);
+    a.href = url; a.download = "tryon-result.jpg";
+    a.click();
+    
+    setTimeout(() => {
+        downBtn.classList.remove("btn-download-success");
+        downBtn.innerText = "Download Look";
+    }, 2000);
 };
 
-document.getElementById("userImg").onchange = e => {
+document.getElementById("fileIn").onchange = e => {
   const file = e.target.files[0];
   if(!file) return;
   const reader = new FileReader();
   reader.onload = async ev => {
-    beforeImgOverlay.src = ev.target.result;
+    inImg.src = ev.target.result;
     document.getElementById("step1").style.display="none";
     document.getElementById("step2").style.display="block";
 
     try {
-      const res = await fetch(BACKEND_URL+"/tryon/start", {
+      const start = await fetch(BACKEND_URL+"/tryon/start", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           userImage: ev.target.result,
           productImage: getProductImage(),
-          category: document.getElementById("manualCategory").value 
+          category: document.getElementById("catSelect").value 
         })
       });
-      const { jobId } = await res.json();
+      const { jobId } = await start.json();
       
-      let result = null;
-      for(let i=0; i<45; i++) {
+      let resUrl = null;
+      for(let i=0; i<40; i++) {
         await new Promise(r=>setTimeout(r,2500));
         const st = await (await fetch(BACKEND_URL+"/tryon/status/"+jobId)).json();
-        if(st.status==="completed") { result = st.resultUrl; break; }
-        if(st.status==="failed") throw new Error("AI Processing Failed. Please try again with a clearer photo.");
+        if(st.status==="completed") { resUrl = st.resultUrl; break; }
       }
 
-      if(!result) throw new Error("Request Timed Out. Please try again.");
+      if(!resUrl) throw new Error("AI Timeout");
       
-      afterImg.src = result;
-      afterImg.onload = () => {
+      outImg.src = resUrl;
+      outImg.onload = () => {
+        // ✅ ALIGNMENT FORCE-SYNC
+        const cont = document.getElementById("container");
+        inImg.style.width = cont.offsetWidth + "px";
+        inImg.style.height = cont.offsetHeight + "px";
         document.getElementById("step2").style.display="none";
         document.getElementById("step3").style.display="block";
       };
-    } catch(err){ alert(err.message); resetFn(); }
+    } catch(err){ alert("Error: " + err.message); reset(); }
   };
   reader.readAsDataURL(file);
 };
 
-slider.oninput = e => { mask.style.width = e.target.value+"%"; };
+slid.oninput = e => { mask.style.width = e.target.value+"%"; };
 window.openTryon = () => { overlay.style.display="flex"; document.body.classList.add("tryon-open"); };
 
-const target = document.querySelector("form[action*='/cart/add']") || document.querySelector(".product-form");
-if(target){
+// Outer Button
+const f = document.querySelector("form[action*='/cart/add']") || document.querySelector(".product-form");
+if(f){
   const b = document.createElement("button");
-  b.type="button"; 
-  // ✅ Main Button Bigger & Nicer Style
-  b.className="tryon-main-btn";
-  b.innerHTML="✨ Virtual Try-On";
+  b.type="button"; b.className="main-tryon-trigger";
+  b.innerHTML="✨ VIRTUAL TRY-ON";
   b.onclick=openTryon;
-  target.after(b);
+  f.after(b);
 }
 
 })();
