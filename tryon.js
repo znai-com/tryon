@@ -30,8 +30,10 @@ body.tryon-open { overflow:hidden; }
 .tryon-btn { margin:10px 8px; padding:12px 28px; background: var(--primary); color:#fff; border-radius:12px; border:none; cursor:pointer; font-weight:600; }
 .loader { width:45px; height:45px; border:4px solid #f3f3f3; border-top:4px solid var(--accent); border-radius:50%; animation:spin 1s linear infinite; margin:0 auto 20px; }
 @keyframes spin { to { transform:rotate(360deg); } }
-.close-icon { position:absolute; top:15px; right:15px; cursor:pointer; font-size:20px; color:#333; z-index:100; }
-#manualCategory { padding: 10px; border-radius: 8px; border: 1px solid #ddd; width: 100%; margin: 10px 0; }
+.close { position:absolute; top:15px; right:15px; cursor:pointer; font-size:20px; }
+.instruction-text { font-size: 13px; color: #666; margin-top: 15px; }
+.privacy-badge { display: inline-block; background: #e8f4fd; color: #2980b9; padding: 4px 12px; border-radius: 20px; font-size: 11px; margin-bottom: 10px; font-weight: 600; }
+#manualCategory { padding: 10px; border-radius: 8px; border: 1px solid #ddd; width: 100%; margin: 10px 0; font-family: inherit; }
 `;
 document.head.appendChild(style);
 
@@ -40,72 +42,76 @@ overlay.className = "tryon-overlay";
 overlay.id = "tryonOverlay";
 overlay.innerHTML = `
 <div class="tryon-box">
-  <div class="close-icon" id="manualClose">✕</div>
+  <div class="close" id="manualCloseBtn">✕</div>
   <div id="step1">
+    <div class="privacy-badge">🔒 Photos are auto-deleted after use</div>
     <h2 style="margin-top:0;">Virtual Fitting Room</h2>
-    <select id="manualCategory">
-        <option value="tops">👕 Top</option>
-        <option value="one-pieces">🥋 Tracksuit / Full Suit</option>
-        <option value="bottoms">👖 Bottoms</option>
-    </select>
-    <div style="padding:40px; border:2px dashed #ccc; border-radius:16px; cursor:pointer;" onclick="document.getElementById('userImg').click()">
-      <strong>📸 Click to Upload Photo</strong>
+    
+    <div style="text-align:left; margin-bottom:15px;">
+      <label style="font-size:12px; font-weight:700; color:#333;">Select Category (Important):</label>
+      <select id="manualCategory">
+        <option value="tops">👕 Top (Shirt/T-shirt/Hoodie)</option>
+        <option value="one-pieces">🥋 Full Suit (Tracksuit/Dress/Set)</option>
+        <option value="bottoms">👖 Bottom (Pants/Trousers/Shorts)</option>
+      </select>
+    </div>
+
+    <div style="padding:30px; border:2px dashed #ddd; border-radius:16px; cursor:pointer; background:#fefefe;" onclick="document.getElementById('userImg').click()">
+      <span style="font-size:40px;">📸</span><br><strong>Upload Your Photo</strong>
+      <p style="font-size:11px; color:#888;">Clear, front-facing photo works best</p>
+    </div>
+
+    <div class="instruction-text">
+      <strong>💡 Tip:</strong> Best results come from wearing plain, fitted clothes.
     </div>
     <input id="userImg" type="file" hidden accept="image/*">
   </div>
   <div id="step2" style="display:none">
     <div class="loader"></div>
     <h3>AI is Tailoring...</h3>
+    <p>Please wait 10-15 seconds.</p>
   </div>
   <div id="step3" style="display:none">
     <div class="compare" id="compareContainer">
       <img id="afterImg" crossorigin="anonymous">
-      <div id="mask"><img id="beforeImgRef"></div>
+      <div id="mask"><img id="beforeImgOverlay"></div>
       <input type="range" class="range" id="slider" min="0" max="100" value="50">
     </div>
     <div style="margin-top:20px;">
-        <button class="tryon-btn" id="retryBtn" style="background:#ddd; color:#333;">Try Another</button>
-        <button class="tryon-btn" id="downloadBtn">Download Look</button>
+        <button class="tryon-btn" id="retryActionBtn" style="background:#f1f1f1; color:#333;">Try Another</button>
+        <button class="tryon-btn" id="downloadActionBtn">Download Look</button>
     </div>
   </div>
 </div>`;
 document.body.appendChild(overlay);
 
-const afterImg = document.getElementById("afterImg"),
-      beforeImgRef = document.getElementById("beforeImgRef"),
+const beforeImgOverlay = document.getElementById("beforeImgOverlay"),
+      afterImg = document.getElementById("afterImg"),
       mask = document.getElementById("mask"),
       slider = document.getElementById("slider");
 
-// ✅ 1. ESC Key aur Manual Close logic
-const forceClose = () => {
-    overlay.style.display = "none";
-    document.body.classList.remove("tryon-open");
-    resetState();
+// ✅ Functions Restore
+const closeAction = () => { overlay.style.display="none"; document.body.classList.remove("tryon-open"); resetTryOn(); };
+document.getElementById("manualCloseBtn").onclick = closeAction;
+window.addEventListener('keydown', (e) => { if(e.key === "Escape") closeAction(); });
+
+window.resetTryOn = () => {
+  document.getElementById("step3").style.display="none";
+  document.getElementById("step2").style.display="none";
+  document.getElementById("step1").style.display="block";
+  document.getElementById("userImg").value = "";
 };
+document.getElementById("retryActionBtn").onclick = resetTryOn;
 
-document.getElementById("manualClose").onclick = forceClose;
-window.addEventListener('keydown', (e) => { if(e.key === "Escape") forceClose(); });
-
-function resetState() {
-    document.getElementById("step3").style.display="none";
-    document.getElementById("step2").style.display="none";
-    document.getElementById("step1").style.display="block";
-    document.getElementById("userImg").value = "";
-}
-
-document.getElementById("retryBtn").onclick = resetState;
-
-// ✅ 2. Download Logic (Blob Method)
-document.getElementById("downloadBtn").onclick = async () => {
+// ✅ Download Logic
+document.getElementById("downloadActionBtn").onclick = async () => {
     if(!afterImg.src) return;
-    const response = await fetch(afterImg.src);
-    const blob = await response.blob();
+    const res = await fetch(afterImg.src);
+    const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = "my-look.jpg";
-    document.body.appendChild(a);
-    a.click();
+    a.href = url; a.download = "my-look.jpg";
+    document.body.appendChild(a); a.click();
     document.body.removeChild(a);
 };
 
@@ -114,51 +120,46 @@ document.getElementById("userImg").onchange = e => {
   if(!file) return;
   const reader = new FileReader();
   reader.onload = async ev => {
-    const userImgData = ev.target.result;
-    beforeImgRef.src = userImgData; 
-    
+    beforeImgOverlay.src = ev.target.result;
     document.getElementById("step1").style.display="none";
     document.getElementById("step2").style.display="block";
 
     try {
-      const res = await fetch(BACKEND_URL+"/tryon/start", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
+      const startRes = await fetch(BACKEND_URL+"/tryon/start", {
+        method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
-          userImage: userImgData,
+          userImage: ev.target.result,
           productImage: getProductImage(),
-          category: document.getElementById("manualCategory").value
+          category: document.getElementById("manualCategory").value 
         })
       });
-      const { jobId } = await res.json();
-
-      // ✅ 3. Speed Check: Polling logic optimized
+      const data = await startRes.json();
+      
       let result = null;
       for(let i=0; i<40; i++) {
-        await new Promise(r => setTimeout(r, 2500)); // Thora kam delay for speed
-        const status = await (await fetch(BACKEND_URL+"/tryon/status/"+jobId)).json();
-        if(status.status === "completed") { result = status.resultUrl; break; }
-        if(status.status === "failed") throw new Error("AI failed");
+        await new Promise(r=>setTimeout(r,2500));
+        const st = await (await fetch(BACKEND_URL+"/tryon/status/"+data.jobId)).json();
+        if(st.status==="completed") { result = st.resultUrl; break; }
+        if(st.status==="failed") throw new Error("AI failed");
       }
 
-      if(!result) throw new Error("Request Timed Out");
-
-      // ✅ 4. Visibility Fix: Force render before showing step3
+      if(!result) throw new Error("Timeout");
+      
       afterImg.src = result;
       afterImg.onload = () => {
+        // ✅ Alignment Fix: Responsive Width set
+        const container = document.getElementById("compareContainer");
+        beforeImgOverlay.style.width = container.offsetWidth + "px";
+        beforeImgOverlay.style.height = container.offsetHeight + "px";
         document.getElementById("step2").style.display="none";
         document.getElementById("step3").style.display="block";
       };
-
-    } catch(err) {
-      alert("Error: " + err.message);
-      resetState();
-    }
+    } catch(err){ alert(err.message); resetTryOn(); }
   };
   reader.readAsDataURL(file);
 };
 
-slider.oninput = e => { mask.style.width = e.target.value + "%"; };
+slider.oninput = e => { mask.style.width = e.target.value+"%"; };
 window.openTryon = () => { overlay.style.display="flex"; document.body.classList.add("tryon-open"); };
 
 const target = document.querySelector("form[action*='/cart/add']") || document.querySelector(".product-form");
